@@ -113,7 +113,8 @@ RUN pecl install amqp \
     && pecl install mongodb \
     && pecl install redis \
     && pecl install ast \
-    && docker-php-ext-enable mongodb redis ast amqp
+    && pecl install xdebug \
+    && docker-php-ext-enable mongodb redis ast amqp xdebug
 
 # Install composer and prestissimo plugin and put binary into $PATH
 RUN curl -sS https://getcomposer.org/installer | php \
