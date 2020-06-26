@@ -139,12 +139,31 @@ RUN /usr/local/bin/composer global require deployer/deployer deployer/recipes
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
     && curl -sL https://deb.nodesource.com/setup_10.x | bash - \
-    && apt-get install -y unzip nodejs build-essential yarn \
+    && apt-get install -y unzip nodejs bsdtar libaio1 build-essential yarn \
     && yarn global add pngquant-bin jpegtran-bin cwebp-bin optipng-bin node-sass \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN composer -V 
+
+# install oci
+COPY ./oracle-sdk/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip \
+    ./oracle-sdk/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip \
+    ./oracle-sdk/instantclient-sqlplus-linux.x64-19.6.0.0.0dbru.zip /tmp/
+
+RUN unzip /tmp/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/  \
+    && unzip /tmp/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/ \
+    && unzip /tmp/instantclient-sqlplus-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/ \
+    && ln -s /usr/local/instantclient_19_6 /usr/local/instantclient \
+    && ln -s /usr/local/instantclient/lib* /usr/lib \
+    && ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus
+
+RUN echo 'instantclient,/usr/local/instantclient/' | pecl install oci8 \
+    && docker-php-ext-enable oci8 \
+    && docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/usr/local/instantclient \
+    && docker-php-ext-install pdo_oci
+
+RUN php -v
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
