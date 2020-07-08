@@ -1,90 +1,90 @@
 FROM php:7.4.7
 
 RUN additionalPackages=" \
-        apt-transport-https \
-        git \
-        msmtp-mta \
-        openssh-client \
-        rsync \
+    apt-transport-https \
+    git \
+    msmtp-mta \
+    openssh-client \
+    rsync \
     " \
     buildDeps=" \
-        freetds-dev \
-        libbz2-dev \
-        libc-client-dev \
-        libenchant-dev \
-        libfreetype6-dev \
-        libgmp3-dev \
-        libicu-dev \
-        libjpeg62-turbo-dev \
-        libkrb5-dev \
-        libldap2-dev \
-        libmcrypt-dev \
-        libpq-dev \
-        libpspell-dev \
-        librabbitmq-dev \
-        libsasl2-dev \
-        libsnmp-dev \
-        libssl-dev \
-        libtidy-dev \
-        libxml2-dev \
-        libxpm-dev \
-        libxslt1-dev \
-        zlib1g-dev \
+    freetds-dev \
+    libbz2-dev \
+    libc-client-dev \
+    libenchant-dev \
+    libfreetype6-dev \
+    libgmp3-dev \
+    libicu-dev \
+    libjpeg62-turbo-dev \
+    libkrb5-dev \
+    libldap2-dev \
+    libmcrypt-dev \
+    libpq-dev \
+    libpspell-dev \
+    librabbitmq-dev \
+    libsasl2-dev \
+    libsnmp-dev \
+    libssl-dev \
+    libtidy-dev \
+    libxml2-dev \
+    libxpm-dev \
+    libxslt1-dev \
+    zlib1g-dev \
     " \
     && runDeps=" \
-        libc-client2007e \
-        libenchant1c2a \
-        libfreetype6 \
-        libicu57 \
-        libjpeg62-turbo \
-        libmcrypt4 \
-        libpng-dev \
-        libzip-dev \
-        libpng16-16 \
-        libpq5 \
-        libsybdb5 \
-        libx11-6 \
-        libxpm4 \
-        libxslt1.1 \
-        snmp \
-        gnupg \
-        openssh-client \
-        rsync \
+    libc-client2007e \
+    libenchant1c2a \
+    libfreetype6 \
+    libicu57 \
+    libjpeg62-turbo \
+    libmcrypt4 \
+    libpng-dev \
+    libzip-dev \
+    libpng16-16 \
+    libpq5 \
+    libsybdb5 \
+    libx11-6 \
+    libxpm4 \
+    libxslt1.1 \
+    snmp \
+    gnupg \
+    openssh-client \
+    rsync \
     " \
     && phpModules=" \
-        bcmath \
-        bz2 \
-        calendar \
-        dba \
-        enchant \
-        exif \
-        ftp \
-        gd \
-        gettext \
-        gmp \
-        imap \
-        intl \
-        ldap \
-        mysqli \
-        opcache \
-        pcntl \
-        pdo \
-        pdo_dblib \
-        pdo_mysql \
-        pdo_pgsql \
-        pgsql \
-        pspell \
-        shmop \
-        snmp \
-        soap \
-        sockets \
-        sysvmsg \
-        sysvsem \
-        sysvshm \
-        tidy \
-        xmlrpc \
-        xsl \
-        zip \
+    bcmath \
+    bz2 \
+    calendar \
+    dba \
+    enchant \
+    exif \
+    ftp \
+    gd \
+    gettext \
+    gmp \
+    imap \
+    intl \
+    ldap \
+    mysqli \
+    opcache \
+    pcntl \
+    pdo \
+    pdo_dblib \
+    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
+    pspell \
+    shmop \
+    snmp \
+    soap \
+    sockets \
+    sysvmsg \
+    sysvsem \
+    sysvshm \
+    tidy \
+    xmlrpc \
+    xsl \
+    zip \
     " \
     && echo "deb http://security.debian.org/ stretch/updates main contrib non-free" > /etc/apt/sources.list.d/additional.list \
     && apt-get update \
@@ -102,8 +102,8 @@ RUN additionalPackages=" \
     && docker-php-ext-install $phpModules \
     && printf "\n" \
     && for ext in $phpModules; do \
-           rm -f /usr/local/etc/php/conf.d/docker-php-ext-$ext.ini; \
-       done \
+    rm -f /usr/local/etc/php/conf.d/docker-php-ext-$ext.ini; \
+    done \
     && docker-php-source delete \
     && docker-php-ext-enable $phpModules
 
@@ -161,7 +161,8 @@ RUN unzip /tmp/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/  
 RUN echo 'instantclient,/usr/local/instantclient/' | pecl install oci8 \
     && docker-php-ext-enable oci8 \
     && docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/usr/local/instantclient \
-    && docker-php-ext-install pdo_oci
+    && docker-php-ext-install pdo_oci \
+    && export LD_LIBRARY_PATH=/usr/local/instantclient/
 
 RUN php -v
 
