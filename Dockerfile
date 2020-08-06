@@ -3,87 +3,25 @@ FROM php:7.4.7
 RUN additionalPackages=" \
     apt-transport-https \
     git \
-    msmtp-mta \
     openssh-client \
     rsync \
+    libaio1 \ 
     " \
     buildDeps=" \
     freetds-dev \
-    libbz2-dev \
-    libc-client-dev \
-    libenchant-dev \
     libfreetype6-dev \
-    libgmp3-dev \
-    libicu-dev \
-    libjpeg62-turbo-dev \
-    libkrb5-dev \
-    libldap2-dev \
-    libmcrypt-dev \
-    libpq-dev \
-    libpspell-dev \
-    librabbitmq-dev \
-    libsasl2-dev \
-    libsnmp-dev \
-    libssl-dev \
-    libtidy-dev \
-    libxml2-dev \
-    libxpm-dev \
-    libxslt1-dev \
-    zlib1g-dev \
     " \
     && runDeps=" \
-    libc-client2007e \
-    libenchant1c2a \
-    libfreetype6 \
-    libicu57 \
-    libjpeg62-turbo \
     libmcrypt4 \
-    libpng-dev \
-    libzip-dev \
-    libpng16-16 \
-    libpq5 \
-    libsybdb5 \
-    libx11-6 \
-    libxpm4 \
-    libxslt1.1 \
-    snmp \
-    gnupg \
+    firebird-dev \
     openssh-client \
+    libzip-dev \
     rsync \
     " \
     && phpModules=" \
-    bcmath \
-    bz2 \
-    calendar \
-    dba \
-    enchant \
-    exif \
-    ftp \
-    gd \
-    gettext \
-    gmp \
-    imap \
-    intl \
-    ldap \
     mysqli \
-    opcache \
-    pcntl \
-    pdo \
-    pdo_dblib \
     pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    pspell \
-    shmop \
-    snmp \
-    soap \
-    sockets \
-    sysvmsg \
-    sysvsem \
-    sysvshm \
-    tidy \
-    xmlrpc \
-    xsl \
+    pdo_firebird \
     zip \
     " \
     && echo "deb http://security.debian.org/ stretch/updates main contrib non-free" > /etc/apt/sources.list.d/additional.list \
@@ -91,14 +29,6 @@ RUN additionalPackages=" \
     && apt-get install -y --no-install-recommends $additionalPackages $buildDeps $runDeps \
     && docker-php-source extract \
     && cd /usr/src/php/ext/ \
-    && ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h \
-    && ln -s /usr/lib/x86_64-linux-gnu/libldap_r.so /usr/lib/libldap.so \
-    && ln -s /usr/lib/x86_64-linux-gnu/libldap_r.a /usr/lib/libldap_r.a \
-    && ln -s /usr/lib/x86_64-linux-gnu/libsybdb.a /usr/lib/libsybdb.a \
-    && ln -s /usr/lib/x86_64-linux-gnu/libsybdb.so /usr/lib/libsybdb.so \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-xpm=/usr/include/ \
-    && docker-php-ext-configure imap --with-imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-configure ldap --with-ldap-sasl \
     && docker-php-ext-install $phpModules \
     && printf "\n" \
     && for ext in $phpModules; do \
@@ -107,44 +37,25 @@ RUN additionalPackages=" \
     && docker-php-source delete \
     && docker-php-ext-enable $phpModules
 
-# Install pecl modules
-RUN pecl install amqp \
-    && pecl install igbinary \
-    && pecl install mongodb \
-    && pecl install redis \
-    && pecl install ast \
+RUN pear config-set http_proxy $HTTP_PROXY \
     && pecl install xdebug \
-    && docker-php-ext-enable mongodb redis ast amqp xdebug
+    && docker-php-ext-enable xdebug
 
 # Install composer and prestissimo plugin and put binary into $PATH
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/ \
     && ln -s /usr/local/bin/composer.phar /usr/local/bin/composer \
-    && /usr/local/bin/composer global require hirak/prestissimo
-
+    && composer global require hirak/prestissimo
 
 # Install testing tools
-RUN /usr/local/bin/composer global require phpunit/phpunit
-
-# Install linting tools
-RUN /usr/local/bin/composer global require phpmd/phpmd squizlabs/php_codesniffer
-
-# Install static analysis tools
-RUN /usr/local/bin/composer global require phpstan/phpstan vimeo/psalm phan/phan
-
-# Install CD tools
-RUN /usr/local/bin/composer global require deployer/deployer deployer/recipes
+RUN composer global require phpunit/phpunit phpmd/phpmd squizlabs/php_codesniffer \
+    && composer global require phpstan/phpstan  vimeo/psalm  phan/phan  deployer/deployer  deployer/recipes 
 
 # Install Node.js & Yarn
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-    && curl -sL https://deb.nodesource.com/setup_10.x | bash - \
-    && apt-get install -y unzip nodejs bsdtar libaio1 build-essential yarn \
-    && yarn global add pngquant-bin jpegtran-bin cwebp-bin optipng-bin node-sass \
+RUN apt-get install -y unzip nodejs bsdtar build-essential npm  \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN composer -V 
 
 # install oci
 COPY ./oracle-sdk/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip \
@@ -154,6 +65,9 @@ COPY ./oracle-sdk/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip \
 RUN unzip /tmp/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/  \
     && unzip /tmp/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/ \
     && unzip /tmp/instantclient-sqlplus-linux.x64-19.6.0.0.0dbru.zip -d /usr/local/ \
+    && rm -rf /tmp/instantclient-basic-linux.x64-19.6.0.0.0dbru.zip \
+    && rm -rf /tmp/instantclient-sdk-linux.x64-19.6.0.0.0dbru.zip \
+    && rm -rf /tmp/instantclient-sqlplus-linux.x64-19.6.0.0.0dbru.zip \
     && ln -s /usr/local/instantclient_19_6 /usr/local/instantclient \
     && ln -s /usr/local/instantclient/lib* /usr/lib \
     && ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus
@@ -164,8 +78,8 @@ RUN echo 'instantclient,/usr/local/instantclient/' | pecl install oci8 \
     && docker-php-ext-install pdo_oci \
     && export LD_LIBRARY_PATH=/usr/local/instantclient/
 
-RUN php -v
 
 COPY entrypoint.sh /entrypoint.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["php", "-a"]
